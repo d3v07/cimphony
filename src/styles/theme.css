@@ -1,0 +1,230 @@
+/* OBSIDIAN COMMAND — M&A War Room Design Tokens */
+
+:root {
+  /* ── THE VOID (Surfaces) ─────────────────────────────────── */
+  --void-absolute: #050505;
+  --void-surface: #111111;
+  --void-border: #222222;
+  --void-elevated: #1A1A1A;
+  --void-inset: #0A0A0A;
+
+  /* ── THE ALPHA PALETTE (Semantic Signals) ──────────────────── */
+  --alpha-green: #00FA9A;
+  --alpha-green-8: rgba(0, 250, 154, 0.08);
+  --alpha-green-15: rgba(0, 250, 154, 0.15);
+  --alpha-green-glow: rgba(0, 250, 154, 0.25);
+
+  --alpha-gold: #FFD700;
+  --alpha-gold-8: rgba(255, 215, 0, 0.08);
+  --alpha-gold-15: rgba(255, 215, 0, 0.15);
+  --alpha-gold-glow: rgba(255, 215, 0, 0.25);
+
+  --alpha-red: #FF2A2A;
+  --alpha-red-8: rgba(255, 42, 42, 0.08);
+  --alpha-red-15: rgba(255, 42, 42, 0.15);
+  --alpha-red-glow: rgba(255, 42, 42, 0.25);
+  --alpha-red-crit-glow: rgba(255, 42, 42, 0.5);
+
+  --alpha-blue: #4285F4;
+  --alpha-blue-8: rgba(66, 133, 244, 0.08);
+  --alpha-blue-15: rgba(66, 133, 244, 0.15);
+  --alpha-blue-glow: rgba(66, 133, 244, 0.25);
+
+  /* ── TEXT ──────────────────────────────────────────────────── */
+  --text-primary: #EDEDED;
+  --text-secondary: #888888;
+  --text-tertiary: #555555;
+  --text-inverse: #050505;
+
+  /* ── SPECIAL PURPOSE ───────────────────────────────────────── */
+  --crt-scanline: rgba(255, 42, 42, 0.03);
+  --provenance-underline: rgba(68, 68, 68, 0.5);
+
+  /* ── TYPOGRAPHY ──────────────────────────────────────────────── */
+  --font-mono: 'JetBrains Mono', 'Geist Mono', 'Fira Code', 'SF Mono', monospace;
+  --font-sans: 'Instrument Sans', 'Geist', system-ui, sans-serif;
+
+  /* ── SPACING (4px base) ─────────────────────────────────────── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-12: 48px;
+
+  /* ── RADIUS ──────────────────────────────────────────────────── */
+  --radius-none: 0px;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+}
+
+@theme inline {
+  /* Map custom properties to Tailwind */
+  --color-void-absolute: var(--void-absolute);
+  --color-void-surface: var(--void-surface);
+  --color-void-border: var(--void-border);
+  --color-void-elevated: var(--void-elevated);
+  --color-void-inset: var(--void-inset);
+
+  --color-alpha-green: var(--alpha-green);
+  --color-alpha-gold: var(--alpha-gold);
+  --color-alpha-red: var(--alpha-red);
+  --color-alpha-blue: var(--alpha-blue);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-inverse: var(--text-inverse);
+}
+
+@layer base {
+  * {
+    @apply outline-alpha-blue/50;
+  }
+
+  body {
+    @apply bg-void-absolute text-text-primary overflow-hidden;
+    font-family: var(--font-sans);
+  }
+
+  /* Reset default typography */
+  h1, h2, h3, h4, h5, h6, p, label, button, input {
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* ── ANIMATION KEYFRAMES ─────────────────────────────────────── */
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes ring-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes breathing {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(0.8); }
+}
+
+@keyframes slide-in-from-top {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-from-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+@keyframes flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Utility classes for the War Room */
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+.crt-scanlines {
+  position: relative;
+}
+
+.crt-scanlines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    var(--crt-scanline) 2px,
+    var(--crt-scanline) 4px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+.glass-break-glow {
+  box-shadow: inset 0 0 80px var(--alpha-red-crit-glow);
+  animation: pulse-glow 3s infinite;
+}
+
+.verdict-glow-green {
+  box-shadow: inset 0 0 40px var(--alpha-green-glow);
+}
+
+.verdict-glow-gold {
+  box-shadow: inset 0 0 40px var(--alpha-gold-glow);
+}
+
+.verdict-glow-red {
+  box-shadow: inset 0 0 40px var(--alpha-red-glow);
+}
+
+/* Hide scrollbars but keep functionality */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
