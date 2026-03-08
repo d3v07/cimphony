@@ -2,17 +2,17 @@ import asyncio
 import json
 import logging
 import re
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
 from google.adk.agents import ParallelAgent, SequentialAgent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types as genai_types
 
-from agents.competitive_agent import create_competitive_agent
-from agents.financial_agent import create_financial_agent
-from agents.sentiment_agent import create_sentiment_agent
-from agents.synthesis_agent import create_synthesis_agent
+from backend.agents.competitive_agent import create_competitive_agent
+from backend.agents.financial_agent import create_financial_agent
+from backend.agents.sentiment_agent import create_sentiment_agent
+from backend.agents.synthesis_agent import create_synthesis_agent
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ _RESEARCH_AGENTS = frozenset(("FinancialAnalyst", "CompetitiveAnalyst", "Sentime
 
 APP_NAME = "cimphony"
 
-_DEAL_MEMO_DEFAULTS: dict[str, tuple[str, ...] | str] = {
+_DEAL_MEMO_DEFAULTS: dict[str, Union[tuple[str, ...], str]] = {
     "verdict": "WATCH",
     "confidence": "medium",
     "red_flags": (),

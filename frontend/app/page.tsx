@@ -1,11 +1,11 @@
 import { useState, useRef, useMemo, KeyboardEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useWarRoom, type RedFlag } from '../hooks/useWarRoom';
-import { MicButton } from './components/MicButton';
-import { BriefingFeed } from './components/BriefingFeed';
-import { DealMemoPanel } from './components/DealMemo';
-import { AgentStatusPanel } from './components/AgentStatus';
-import { RedFlagAlert } from './components/RedFlagAlert';
+import { useWarRoom, type RedFlag } from '../../hooks/useWarRoom';
+import { MicButton } from './MicButton';
+import { BriefingFeed } from './BriefingFeed';
+import { DealMemoPanel } from './DealMemo';
+import { AgentStatusPanel } from './AgentStatus';
+import { RedFlagAlert } from './RedFlagAlert';
 
 // Verdict → Tailwind color tokens
 const VERDICT_COLOR: Record<string, string> = {
