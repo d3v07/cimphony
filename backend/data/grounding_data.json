@@ -1,0 +1,40 @@
+{
+    "TSLA": {
+        "company_name": "Tesla, Inc.",
+        "ticker": "TSLA",
+        "fiscal_year_ended": "2025-12-31",
+        "source": "SEC 10-K & Yahoo Finance",
+        "financials": {
+            "revenue_usd": 94830000000,
+            "revenue_period": "FY2025",
+            "yoy_growth_pct": -3.0,
+            "ebitda_usd": 10750000000,
+            "ebitda_margin_pct": 11.3,
+            "fcf_usd": 6200000000,
+            "net_income_usd": 3790000000,
+            "net_income_yoy_pct": -46.0
+        },
+        "market_data": {
+            "forward_pe": 216.79,
+            "market_cap_target": "2T (Bull Case)",
+            "analyst_consensus": "Hold",
+            "price_target_avg": 250.0
+        },
+        "red_flags": [
+            {
+                "flag": "Automotive revenue decreased 10% due to lower deliveries and average selling prices.",
+                "severity": "HIGH"
+            },
+            {
+                "flag": "Significant gaps between Robotaxi promises and Level 2 driver assistance reality.",
+                "severity": "CRITICAL"
+            },
+            {
+                "flag": "Operating income declining due to rising expenses and reduced regulatory credit revenue.",
+                "severity": "MEDIUM"
+            }
+        ],
+        "bull_case": "Transformation into a multi-layered AI platform (Robotaxi, Optimus, FSD). Leadership in autonomous driving.",
+        "bear_case": "EV market competition (BYD/Rivian), margin erosion from price cuts, high valuation risk."
+    }
+}
