@@ -72,7 +72,7 @@ export interface WarRoomState {
 // Constants
 // ---------------------------------------------------------------------------
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws';
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws';
 
 const MIC_SAMPLE_RATE = 16_000;
 const PLAYBACK_SAMPLE_RATE = 24_000;
@@ -391,7 +391,7 @@ export function useWarRoom() {
 
   const sendFollowUp = useCallback(
     (text: string) => {
-      send(JSON.stringify({ type: 'follow_up', text }));
+      send(JSON.stringify({ type: 'text', text }));
     },
     [send],
   );
