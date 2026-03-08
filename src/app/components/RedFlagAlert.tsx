@@ -24,7 +24,7 @@ export function RedFlagAlert({ flag }: RedFlagAlertProps) {
           transition={{ duration: 0.25, ease: 'easeOut' }}
           className="flex items-start gap-3 rounded-lg border border-alpha-red/50 bg-alpha-red/10 px-4 py-3 shadow-lg"
         >
-          <AlertTriangle className="w-4 h-4 text-alpha-red flex-shrink-0 mt-0.5" />
+          <AlertTriangle className="w-4 h-4 text-alpha-red shrink-0 mt-0.5" />
           <p className="font-mono text-[12px] text-alpha-red leading-snug">{flag}</p>
         </motion.div>
       )}

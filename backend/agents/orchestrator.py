@@ -15,14 +15,16 @@ from backend.agents.synthesis_agent import create_synthesis_agent
 
 logger = logging.getLogger(__name__)
 
+_RESEARCH_AGENTS = frozenset(("FinancialAnalyst", "CompetitiveAnalyst", "SentimentAnalyst"))
+
 APP_NAME = "cimphony"
 
-_DEAL_MEMO_DEFAULTS: dict[str, Any] = {
+_DEAL_MEMO_DEFAULTS: dict[str, tuple[str, ...] | str] = {
     "verdict": "WATCH",
     "confidence": "medium",
-    "red_flags": [],
-    "follow_up_questions": [],
-    "sources": [],
+    "red_flags": (),
+    "follow_up_questions": (),
+    "sources": (),
 }
 
 
@@ -102,7 +104,7 @@ class MAOrchestrator:
             event_author: str = getattr(event, "author", "") or ""
             is_final: bool = getattr(event, "is_final_response", False)
 
-            if event_author in ("FinancialAnalyst", "CompetitiveAnalyst", "SentimentAnalyst"):
+            if event_author in _RESEARCH_AGENTS:
                 _emit(
                     {
                         "type": "agent_status",
@@ -161,8 +163,8 @@ class MAOrchestrator:
             if parsed is not None:
                 return self._apply_defaults(parsed, session_id)
 
-        # ---- Case 3: regex fallback — find largest {...} block ----
-        candidates = re.findall(r"\{.*?\}", raw, re.DOTALL)
+        # ---- Case 3: regex fallback — find outermost {...} blocks ----
+        candidates = re.findall(r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}", raw, re.DOTALL)
         # Try from largest to smallest to prefer the full deal memo
         for candidate in sorted(candidates, key=len, reverse=True):
             parsed = self._try_parse_json(candidate)
@@ -201,7 +203,8 @@ class MAOrchestrator:
     ) -> dict[str, Any]:
         """Merge sane defaults into the parsed dict without overwriting existing keys."""
         for key, default_value in _DEAL_MEMO_DEFAULTS.items():
-            data.setdefault(key, default_value)
+            # Convert tuples to fresh lists so each caller gets its own mutable copy
+            data.setdefault(key, list(default_value) if isinstance(default_value, tuple) else default_value)
         data.setdefault("session_id", session_id)
         return data
 

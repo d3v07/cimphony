@@ -1,14 +1,16 @@
+from string import Template
+
 from google.adk.agents import LlmAgent
 
 from backend.prompts.synthesis_prompt import SYNTHESIS_PROMPT
 
+# Use safe_substitute so ADK session-state placeholders like
+# {financial_data} survive untouched into the runtime instruction.
+_TEMPLATE = Template(SYNTHESIS_PROMPT)
+
 
 def create_synthesis_agent() -> LlmAgent:
-    instruction = SYNTHESIS_PROMPT.format(
-        financial_data="{financial_data}",
-        competitive_data="{competitive_data}",
-        sentiment_data="{sentiment_data}",
-    )
+    instruction = _TEMPLATE.safe_substitute()
 
     return LlmAgent(
         name="SynthesisAgent",

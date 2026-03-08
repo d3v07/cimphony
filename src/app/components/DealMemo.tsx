@@ -1,4 +1,4 @@
-import { AlertTriangle, ExternalLink, BarChart3, Users, Shield } from 'lucide-react';
+import { AlertTriangle, ExternalLink } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { DealMemo } from '../../hooks/useWarRoom';
 
@@ -192,7 +192,7 @@ export function DealMemoPanel({ memo }: DealMemoPanelProps) {
                 key={i}
                 className={`flex gap-2 items-start text-sm rounded px-3 py-2 border ${SEVERITY_CONFIG[flag.severity] ?? SEVERITY_CONFIG.LOW}`}
               >
-                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                 <div>
                   <span className="font-semibold uppercase font-mono text-[10px] tracking-widest mr-2">
                     {flag.severity}
@@ -211,7 +211,7 @@ export function DealMemoPanel({ memo }: DealMemoPanelProps) {
           <ul className="space-y-1">
             {memo.sources.slice(0, 3).map((src, i) => (
               <li key={i} className="flex items-center gap-1.5 text-xs text-text-tertiary">
-                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                <ExternalLink className="w-3 h-3 shrink-0" />
                 <a
                   href={src.url}
                   target="_blank"
@@ -220,7 +220,7 @@ export function DealMemoPanel({ memo }: DealMemoPanelProps) {
                 >
                   {src.title || src.url}
                 </a>
-                <span className="text-text-tertiary/50 flex-shrink-0">{src.date_accessed}</span>
+                <span className="text-text-tertiary/50 shrink-0">{src.date_accessed}</span>
               </li>
             ))}
             {memo.sources.length > 3 && (

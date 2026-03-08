@@ -20,10 +20,10 @@ export function MicButton({ isListening, isAnalyzing, onStart, onStop }: MicButt
 
   // Derive visual state
   const stateClasses = isAnalyzing
-    ? 'bg-amber-500/20 border-amber-400/50 text-amber-400 cursor-not-allowed'
+    ? 'bg-alpha-gold/20 border-alpha-gold/50 text-alpha-gold cursor-not-allowed'
     : isListening
-    ? 'bg-red-500/20 border-red-400/70 text-red-400 cursor-pointer'
-    : 'bg-blue-500/20 border-blue-400/70 text-blue-300 cursor-pointer hover:bg-blue-500/30';
+    ? 'bg-alpha-red/20 border-alpha-red/70 text-alpha-red cursor-pointer'
+    : 'bg-alpha-blue/20 border-alpha-blue/70 text-alpha-blue cursor-pointer hover:bg-alpha-blue/30';
 
   return (
     <div className="relative inline-flex items-center justify-center">
@@ -31,13 +31,13 @@ export function MicButton({ isListening, isAnalyzing, onStart, onStop }: MicButt
       {isListening && (
         <>
           <motion.span
-            className="absolute inset-0 rounded-full border border-red-400/60"
+            className="absolute inset-0 rounded-full border border-alpha-red/60"
             initial={{ scale: 1, opacity: 0.7 }}
             animate={{ scale: 2, opacity: 0 }}
             transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
           />
           <motion.span
-            className="absolute inset-0 rounded-full border border-red-400/40"
+            className="absolute inset-0 rounded-full border border-alpha-red/40"
             initial={{ scale: 1, opacity: 0.5 }}
             animate={{ scale: 2.6, opacity: 0 }}
             transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut', delay: 0.4 }}
@@ -62,7 +62,7 @@ export function MicButton({ isListening, isAnalyzing, onStart, onStop }: MicButt
         {/* Pulsing background glow when listening */}
         {isListening && (
           <motion.span
-            className="absolute inset-0 rounded-full bg-red-500/20"
+            className="absolute inset-0 rounded-full bg-alpha-red/20"
             animate={{ opacity: [0.3, 0.7, 0.3] }}
             transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
           />

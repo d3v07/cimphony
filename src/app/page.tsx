@@ -1,6 +1,6 @@
-import { useState, useRef, KeyboardEvent } from 'react';
+import { useState, useRef, useMemo, KeyboardEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useWarRoom } from '../../hooks/useWarRoom';
+import { useWarRoom, type RedFlag } from '../../hooks/useWarRoom';
 import { MicButton } from './MicButton';
 import { BriefingFeed } from './BriefingFeed';
 import { DealMemoPanel } from './DealMemo';
@@ -19,9 +19,27 @@ export default function WarRoomPage() {
   const [followUpInput, setFollowUpInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const isAnalyzing =
-    !state.pipelineComplete &&
-    Object.values(state.agentStatuses).some((s) => s === 'searching');
+  const isAnalyzing = useMemo(
+    () =>
+      !state.pipelineComplete &&
+      Object.values(state.agentStatuses).some((s) => s === 'searching'),
+    [state.pipelineComplete, state.agentStatuses],
+  );
+
+  const transcriptLines = useMemo(
+    () => (state.transcript ? state.transcript.split('\n').filter(Boolean) : []),
+    [state.transcript],
+  );
+
+  const verdictColor = useMemo(
+    () =>
+      state.dealMemo
+        ? (VERDICT_COLOR[state.dealMemo.verdict] ?? 'text-text-primary')
+        : 'text-text-primary',
+    [state.dealMemo],
+  );
+
+  const recentFlags = useMemo(() => state.redFlags.slice(-3), [state.redFlags]);
 
   const handleFollowUpSubmit = () => {
     const text = followUpInput.trim();
@@ -33,17 +51,6 @@ export default function WarRoomPage() {
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') handleFollowUpSubmit();
   };
-
-  const transcriptLines = state.transcript
-    ? state.transcript.split('\n').filter(Boolean)
-    : [];
-
-  const verdictColor = state.dealMemo
-    ? (VERDICT_COLOR[state.dealMemo.verdict] ?? 'text-text-primary')
-    : 'text-text-primary';
-
-  // Only show last 3 red flags as alerts
-  const recentFlags = state.redFlags.slice(-3);
 
   return (
     <div className="min-h-screen bg-gray-950 text-text-primary font-mono flex flex-col">
@@ -104,7 +111,7 @@ export default function WarRoomPage() {
       <AnimatePresence>
         {recentFlags.length > 0 && (
           <div className="px-6 pt-3 flex flex-col gap-2">
-            {recentFlags.map((f, i) => (
+            {recentFlags.map((f: RedFlag, i: number) => (
               <RedFlagAlert key={`${f.flag}-${i}`} flag={f.flag} />
             ))}
           </div>
@@ -148,7 +155,7 @@ export default function WarRoomPage() {
                 Suggested Follow-ups
               </p>
               <div className="flex flex-col gap-2">
-                {state.dealMemo.follow_up_questions.slice(0, 3).map((q, i) => (
+                {state.dealMemo.follow_up_questions.slice(0, 3).map((q: string, i: number) => (
                   <motion.button
                     key={i}
                     initial={{ opacity: 0, x: -8 }}

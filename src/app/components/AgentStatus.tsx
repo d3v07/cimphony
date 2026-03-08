@@ -70,7 +70,7 @@ export function AgentStatusPanel({ statuses }: AgentStatusPanelProps) {
             className={`flex items-center gap-3 rounded-lg border px-3 py-3 ${cfg.border} ${cfg.bg} transition-colors duration-300`}
           >
             {/* Agent icon */}
-            <div className={`flex-shrink-0 ${cfg.text}`}>
+            <div className={`shrink-0 ${cfg.text}`}>
               <AgentIcon className="w-4 h-4" />
             </div>
 
@@ -85,7 +85,7 @@ export function AgentStatusPanel({ statuses }: AgentStatusPanelProps) {
             </div>
 
             {/* Status indicator */}
-            <div className="flex-shrink-0 relative flex items-center justify-center w-5 h-5">
+            <div className="shrink-0 relative flex items-center justify-center w-5 h-5">
               {/* Pulse ring when running */}
               {cfg.pulse && (
                 <motion.span

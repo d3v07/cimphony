@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+declare global {
+  interface ImportMeta {
+    readonly env: Record<string, string | undefined>;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -66,12 +72,7 @@ export interface WarRoomState {
 // Constants
 // ---------------------------------------------------------------------------
 
-const WS_URL =
-  (typeof import.meta !== 'undefined' &&
-    (import.meta as Record<string, unknown>).env &&
-    ((import.meta as Record<string, unknown>).env as Record<string, string>)
-      .VITE_WS_URL) ||
-  'ws://localhost:8000/ws';
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws';
 
 const MIC_SAMPLE_RATE = 16_000;
 const PLAYBACK_SAMPLE_RATE = 24_000;
@@ -110,6 +111,9 @@ export function useWarRoom() {
   const micStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const micCtxRef = useRef<AudioContext | null>(null);
+  // Keep a ref to the latest state so the WS message handler never goes stale
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   // ---------------------------------------------------------------------------
   // WebSocket helpers
@@ -155,14 +159,15 @@ export function useWarRoom() {
   const enqueueAudioChunk = useCallback(
     (base64: string) => {
       // Decode base64 → binary → Int16 PCM → Float32
-      const binary = atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const raw = atob(base64);
+      const bytes = new Uint8Array(raw.length);
+      for (let i = 0, len = raw.length; i < len; i++) bytes[i] = raw.charCodeAt(i);
 
       const int16 = new Int16Array(bytes.buffer);
       const float32 = new Float32Array(int16.length);
-      for (let i = 0; i < int16.length; i++) {
-        float32[i] = int16[i] / 32_768;
+      const INV = 1 / 32_768;
+      for (let i = 0, len = int16.length; i < len; i++) {
+        float32[i] = int16[i] * INV;
       }
 
       audioQueueRef.current.push(float32);
@@ -291,12 +296,16 @@ export function useWarRoom() {
       setState((s) => ({ ...s, connected: false, isListening: false }));
   }, [handleMessage]);
 
-  const disconnect = useCallback(() => {
+  // ---------------------------------------------------------------------------
+  // Teardown helper (shared by disconnect + unmount)
+  // ---------------------------------------------------------------------------
+
+  const teardown = useCallback(() => {
     wsRef.current?.close();
     micStreamRef.current?.getTracks().forEach((t) => t.stop());
     processorRef.current?.disconnect();
-    micCtxRef.current?.close();
-    audioCtxRef.current?.close();
+    void micCtxRef.current?.close();
+    void audioCtxRef.current?.close();
 
     wsRef.current = null;
     micStreamRef.current = null;
@@ -305,20 +314,17 @@ export function useWarRoom() {
     audioCtxRef.current = null;
     audioQueueRef.current = [];
     isPlayingRef.current = false;
-
-    setState(INITIAL_STATE);
   }, []);
+
+  const disconnect = useCallback(() => {
+    teardown();
+    setState(INITIAL_STATE);
+  }, [teardown]);
 
   // Auto-connect on mount
   useEffect(() => {
     connect();
-    return () => {
-      wsRef.current?.close();
-      micStreamRef.current?.getTracks().forEach((t) => t.stop());
-      processorRef.current?.disconnect();
-      micCtxRef.current?.close().catch(() => undefined);
-      audioCtxRef.current?.close().catch(() => undefined);
-    };
+    return teardown;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -327,7 +333,7 @@ export function useWarRoom() {
   // ---------------------------------------------------------------------------
 
   const startListening = useCallback(async () => {
-    if (state.isListening) return;
+    if (stateRef.current.isListening) return;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -365,7 +371,7 @@ export function useWarRoom() {
         error: err instanceof Error ? err.message : 'Microphone access denied',
       }));
     }
-  }, [state.isListening, send]);
+  }, [send]);
 
   const stopListening = useCallback(() => {
     micStreamRef.current?.getTracks().forEach((t) => t.stop());
