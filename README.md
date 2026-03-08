@@ -1,8 +1,21 @@
-# CIMphony: M&A War Room
+# 🚀 CIMphony: M&A War Room
 
 > Live M&A Due Diligence Platform. Columbia Business School × Google Hackathon 2026.
 
 CIMphony is an autonomous, multi-agent command center designed to accelerate the M&A due diligence pipeline. It leverages the Gemini Live API and parallel LLM research agents to ingest real-time voice commands, analyze target companies systematically, and synthesize investment memorandums on demand.
+
+---
+
+## ⚡ Quick Start (Team Sync)
+
+To ensure you're using the correct **Obsidian UI** (ykshah1309's frontend), follow this structure:
+
+*   **🎨 Frontend**: Located in `frontend/`. 
+    *   Command: `cd frontend && npm install && npm run dev`
+*   **🧠 Backend**: Located in `backend/`.
+    *   Command: `cd backend && python3 main.py`
+
+*Note: Root-level Vite files have been removed to avoid confusion.*
 
 ---
 
