@@ -1,52 +1,69 @@
-import pytest
+"""
+Integration tests for Firestore service (Issue #52 / S3.1).
+
+Tests writing, reading, and appending red flags to a deal memo.
+Skips gracefully if FIRESTORE_PROJECT_ID is not configured.
+"""
+
 import os
+import pytest
 
+from backend.services.firestore_service import FirestoreService
 
-@pytest.mark.asyncio
-async def test_firestore_write_and_read():
-    """Integration test: write then read a deal memo from Firestore."""
+# Mark all tests in this file as async
+pytestmark = pytest.mark.asyncio
+
+# Global fixture to skip tests if Firestore is not configured
+@pytest.fixture(autouse=True)
+def skip_if_no_firestore():
     if not os.getenv("FIRESTORE_PROJECT_ID"):
-        pytest.skip("FIRESTORE_PROJECT_ID not set")
-
-    from backend.services.firestore_service import FirestoreService
-
-    service = FirestoreService()
-    test_memo = {
-        "company": "TestCo",
-        "verdict": "WATCH",
-        "red_flags": ["Test flag 1"],
-        "financials_summary": "Test financials",
-        "competitive_summary": "Test competitive",
-        "risk_summary": "Test risk",
-    }
-    session_id = "test-firestore-write-001"
-
-    path = await service.write_deal_memo(session_id, test_memo)
-    assert path == f"deals/{session_id}"
-
-    retrieved = await service.get_deal_memo(session_id)
-    assert retrieved["company"] == "TestCo"
-    assert retrieved["verdict"] == "WATCH"
+        pytest.skip("FIRESTORE_PROJECT_ID not set, skipping integration test.")
 
 
-@pytest.mark.asyncio
-async def test_firestore_append_red_flag():
-    if not os.getenv("FIRESTORE_PROJECT_ID"):
-        pytest.skip("FIRESTORE_PROJECT_ID not set")
+class TestFirestoreService:
+    """Integration test suite against live Firestore."""
 
-    from backend.services.firestore_service import FirestoreService
+    @pytest.fixture
+    def service(self):
+        """Returns a configured FirestoreService instance."""
+        return FirestoreService()
 
-    service = FirestoreService()
-    session_id = "test-firestore-flag-001"
+    async def test_firestore_write_read_roundtrip(self, service):
+        """Verify we can save a deal memo and read it back perfectly."""
+        test_id = "test-memo-roundtrip-001"
+        test_data = {
+            "verdict": "BUY",
+            "confidence": "high",
+            "red_flags": ["management turnover"],
+        }
 
-    await service.write_deal_memo(session_id, {
-        "company": "FlagTestCo",
-        "verdict": "AVOID",
-        "red_flags": ["initial flag"],
-    })
+        # Save to database
+        await service.save_deal_memo(test_id, test_data)
 
-    await service.append_red_flag(session_id, "new critical flag")
+        # Retrieve and verify
+        retrieved = await service.get_deal_memo(test_id)
+        assert retrieved is not None
+        assert retrieved["verdict"] == "BUY"
+        assert retrieved["confidence"] == "high"
+        assert "management turnover" in retrieved["red_flags"]
 
-    retrieved = await service.get_deal_memo(session_id)
-    assert "new critical flag" in retrieved["red_flags"]
-    assert "initial flag" in retrieved["red_flags"]
+    async def test_firestore_append_red_flag(self, service):
+        """Verify ArrayUnion correctly appends a new flag to an existing array."""
+        test_id = "test-memo-flags-002"
+        initial_data = {
+            "verdict": "AVOID",
+            "red_flags": ["initial flag"],
+        }
+
+        # Seed initial data
+        await service.save_deal_memo(test_id, initial_data)
+
+        # Append a new flag
+        await service.append_red_flag(test_id, "new critical flag")
+
+        # Retrieve and verify both flags exist
+        retrieved = await service.get_deal_memo(test_id)
+        assert retrieved is not None
+        assert "initial flag" in retrieved["red_flags"]
+        assert "new critical flag" in retrieved["red_flags"]
+

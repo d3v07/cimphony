@@ -1,38 +1,52 @@
-from backend.services.audio_utils import chunk_audio, pcm_to_wav_header, convert_browser_audio_to_pcm
+"""
+Unit tests for backend audio utilities (Issue #51 / S2.5).
+
+Tests PCM to WAV header generation and raw audio chunking.
+"""
+
+import pytest
+
+from backend.services.audio_utils import (
+    pcm_to_wav_header,
+    chunk_audio,
+    convert_browser_audio_to_pcm,
+)
 
 
-def test_chunk_audio_correct_count():
-    """1 second of 16kHz 16-bit mono audio = 32000 bytes → 10 chunks of 100ms."""
-    sample_rate = 16000
-    duration_secs = 1
-    dummy_audio = bytes(sample_rate * 2 * duration_secs)  # 32000 bytes
+class TestAudioUtils:
+    """Test suite for audio processing utilities."""
 
-    chunks = chunk_audio(dummy_audio, chunk_size_ms=100, sample_rate=sample_rate)
+    def test_chunk_audio_correct_size(self):
+        """
+        Verify that 1 second of 16kHz 16-bit mono audio (32,000 bytes)
+        splits perfectly into 10 chunks of 100ms (3,200 bytes each).
+        """
+        # 16000 samples/sec * 2 bytes/sample * 1 channel * 1 second = 32000 bytes
+        one_second_audio = b"\x00" * 32000
 
-    assert len(chunks) == 10
+        chunks = chunk_audio(one_second_audio, chunk_size_ms=100, sample_rate=16000)
 
+        assert len(chunks) == 10
+        for chunk in chunks:
+            assert len(chunk) == 3200
 
-def test_chunk_audio_correct_size():
-    """Each 100ms chunk at 16kHz 16-bit = 3200 bytes."""
-    dummy_audio = bytes(32000)
-    chunks = chunk_audio(dummy_audio, chunk_size_ms=100, sample_rate=16000)
+    def test_wav_header_length(self):
+        """Verify the generated WAV header is exactly 44 bytes long."""
+        header = pcm_to_wav_header(sample_rate=16000, channels=1, bits=16)
+        assert len(header) == 44
 
-    for chunk in chunks:
-        assert len(chunk) == 3200
+    def test_wav_header_starts_with_riff(self):
+        """Verify the generated WAV header starts with the RIFF magic bytes."""
+        header = pcm_to_wav_header(sample_rate=16000, channels=1, bits=16)
+        assert header[:4] == b"RIFF"
+        assert header[8:12] == b"WAVE"
 
+    def test_browser_audio_passthrough(self):
+        """
+        Verify convert_browser_audio_to_pcm acts as a passthrough
+        for raw PCM bytes (the current implementation of the project).
+        """
+        test_data = b"\x01\x02\x03\x04\x05"
+        result = convert_browser_audio_to_pcm(test_data)
+        assert result == test_data
 
-def test_wav_header_length():
-    """WAV header is always 44 bytes."""
-    header = pcm_to_wav_header()
-    assert len(header) == 44
-
-
-def test_wav_header_starts_with_riff():
-    header = pcm_to_wav_header()
-    assert header[:4] == b'RIFF'
-
-
-def test_browser_audio_passthrough():
-    """Browser audio is already PCM — should pass through unchanged."""
-    test_data = b'\x00\x01\x02\x03'
-    assert convert_browser_audio_to_pcm(test_data) == test_data
