@@ -11,9 +11,11 @@ import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 active_sessions: Dict[str, dict] = {}
@@ -41,6 +43,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/")
+async def root():
+    return {
+        "service": "M&A War Room Backend",
+        "status": "running",
+        "frontend": "http://localhost:5173",
+        "ws_endpoint": "ws://localhost:8080/ws",
+    }
 
 
 @app.get("/health")
@@ -97,7 +109,12 @@ async def websocket_endpoint(websocket: WebSocket):
     live_session.on_text_output(on_text_output)
     live_session.on_company_detected(on_company_detected)
 
-    await live_session.start()
+    try:
+        await live_session.start()
+    except Exception as e:
+        logger.exception("Failed to start Gemini Live session")
+        await send_ws({"type": "error", "message": f"Gemini Live API failed: {e}"})
+        return
 
     active_sessions[session_id] = {
         "live_session": live_session,
@@ -109,6 +126,8 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             message = await websocket.receive()
+            if message.get("type") == "websocket.disconnect":
+                break
             if "text" in message:
                 data = json.loads(message["text"])
                 msg_type = data.get("type")
@@ -118,7 +137,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     break
             elif "bytes" in message:
                 await live_session.send_audio(message["bytes"])
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, RuntimeError):
         pass
     finally:
         await live_session.close()
