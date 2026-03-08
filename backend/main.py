@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import os
 import uuid
 import base64
@@ -12,6 +13,8 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 active_sessions: Dict[str, dict] = {}
 
@@ -51,16 +54,17 @@ async def websocket_endpoint(websocket: WebSocket):
     Main WebSocket endpoint. Handles:
     - Audio streaming (mic → Gemini → speaker)
     - Company detection → ADK pipeline → deal memo
-    - Red flag keyword scanning
     - Text follow-up questions
     - Graceful disconnect
     """
     from live_session import LiveSession
+    from agents.orchestrator import MAOrchestrator
 
     await websocket.accept()
     session_id = str(uuid.uuid4())
 
     live_session = LiveSession(session_id=session_id)
+    orchestrator = MAOrchestrator()
 
     async def send_ws(data: dict):
         try:
@@ -76,23 +80,18 @@ async def websocket_endpoint(websocket: WebSocket):
 
     async def on_text_output(text: str):
         await send_ws({"type": "transcript", "text": text})
-        red_flag_keywords = [
-            "flagging this", "material omission", "discrepancy",
-            "going concern", "sec investigation", "cfo departure",
-            "guidance cut", "insider selling"
-        ]
-        lower_text = text.lower()
-        for keyword in red_flag_keywords:
-            if keyword in lower_text:
-                idx = lower_text.index(keyword)
-                flag_context = text[max(0, idx - 20):idx + 100]
-                await send_ws({"type": "red_flag", "flag": flag_context})
 
     async def on_company_detected(company_name: str):
+        """When Gemini confirms a company, trigger the real agent pipeline."""
         await send_ws({
             "type": "company_detected",
             "company": company_name,
         })
+
+        # Fire the real ADK orchestrator pipeline in the background
+        asyncio.create_task(
+            _run_pipeline(orchestrator, live_session, send_ws, company_name, session_id)
+        )
 
     live_session.on_audio_output(on_audio_output)
     live_session.on_text_output(on_text_output)
@@ -124,6 +123,50 @@ async def websocket_endpoint(websocket: WebSocket):
     finally:
         await live_session.close()
         active_sessions.pop(session_id, None)
+
+
+async def _run_pipeline(
+    orchestrator: "MAOrchestrator",
+    live_session: "LiveSession",
+    send_ws,
+    company_name: str,
+    session_id: str,
+):
+    """Run the full ADK agent pipeline and stream results back via WebSocket."""
+    try:
+        deal_memo = await orchestrator.analyze_company(
+            company_name=company_name,
+            session_id=session_id,
+            on_status_update=send_ws,
+        )
+
+        # Send red flags from the actual agent analysis
+        for flag in deal_memo.get("red_flags", []):
+            if isinstance(flag, dict):
+                await send_ws({"type": "red_flag", "data": flag})
+            else:
+                await send_ws({
+                    "type": "red_flag",
+                    "data": {"flag": str(flag), "severity": "MEDIUM", "source_agent": "synthesis"},
+                })
+
+        # Send the deal memo to the frontend
+        await send_ws({"type": "deal_memo", "data": deal_memo})
+
+        # Signal pipeline completion
+        await send_ws({"type": "pipeline_complete"})
+
+        # Inject the spoken briefing into Gemini Live so it reads it aloud
+        briefing = deal_memo.get("spoken_briefing_text", "")
+        if briefing:
+            await live_session.inject_briefing(briefing, company_name)
+
+    except Exception:
+        logger.exception("Pipeline failed for company=%s session=%s", company_name, session_id)
+        await send_ws({
+            "type": "error",
+            "message": f"Analysis pipeline failed for {company_name}. Please try again.",
+        })
 
 
 if __name__ == "__main__":

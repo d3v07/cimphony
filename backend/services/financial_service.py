@@ -1,6 +1,5 @@
 import yfinance as yf
 import json
-import asyncio
 from typing import Dict, Any, List
 
 class FinancialService:
@@ -69,22 +68,38 @@ def serialize_financial_data(data: Any) -> Any:
         return [serialize_financial_data(v) for v in data]
     return data
 
-# Example Tool Wrapper for ADK
+# ADK Tool — must be synchronous (yfinance is sync, and asyncio.run()
+# crashes inside an already-running event loop).
 def fetch_company_data_tool(ticker: str) -> str:
     """
     Fetches comprehensive financial data for a given stock ticker (e.g., 'TSLA', 'AAPL').
     Returns a JSON string with market metrics, financials, and SEC filing links.
     """
-    service = FinancialService()
-    
-    info = asyncio.run(service.get_ticker_info(ticker))
-    filings = asyncio.run(service.get_sec_filings(ticker))
-    
-    # Cast to list for safe slicing and convert dates to strings
-    recent_filings = serialize_financial_data(list(filings)[:5]) if filings else []
-    metrics = serialize_financial_data(info)
-    
-    return json.dumps({
-        "ticker_metrics": metrics,
-        "recent_sec_filings": recent_filings
-    }, indent=2)
+    try:
+        t = yf.Ticker(ticker)
+        info = t.info
+
+        metrics = {
+            "company_name": info.get("longName"),
+            "current_price": info.get("currentPrice"),
+            "market_cap": info.get("marketCap"),
+            "forward_pe": info.get("forwardPE"),
+            "trailing_pe": info.get("trailingPE"),
+            "revenue_growth": info.get("revenueGrowth"),
+            "ebitda": info.get("ebitda"),
+            "operating_margins": info.get("operatingMargins"),
+            "debt_to_equity": info.get("debtToEquity"),
+            "free_cashflow": info.get("freeCashflow"),
+            "summary": (info.get("longBusinessSummary") or "")[:500],
+        }
+
+        sec = t.sec_filings
+        recent_filings = serialize_financial_data(list(sec)[:5]) if sec else []
+        metrics = serialize_financial_data(metrics)
+
+        return json.dumps({
+            "ticker_metrics": metrics,
+            "recent_sec_filings": recent_filings,
+        }, indent=2)
+    except Exception as e:
+        return json.dumps({"error": str(e)})

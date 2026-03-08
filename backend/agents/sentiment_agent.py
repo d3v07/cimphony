@@ -1,7 +1,7 @@
 from google.adk.agents import LlmAgent
 from google.adk.tools import google_search
 
-from backend.prompts.sentiment_prompt import SENTIMENT_ANALYST_PROMPT
+from prompts.sentiment_prompt import SENTIMENT_ANALYST_PROMPT
 
 
 def create_sentiment_agent() -> LlmAgent:

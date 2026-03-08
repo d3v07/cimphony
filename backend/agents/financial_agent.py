@@ -1,8 +1,8 @@
 from google.adk.agents import LlmAgent
 from google.adk.tools import google_search
 
-from backend.prompts.financial_prompt import FINANCIAL_ANALYST_PROMPT
-from backend.services.financial_service import fetch_company_data_tool
+from prompts.financial_prompt import FINANCIAL_ANALYST_PROMPT
+from services.financial_service import fetch_company_data_tool
 
 
 def create_financial_agent() -> LlmAgent:

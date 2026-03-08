@@ -1,7 +1,7 @@
 from google.adk.agents import LlmAgent
 from google.adk.tools import google_search
 
-from backend.prompts.competitive_prompt import COMPETITIVE_ANALYST_PROMPT
+from prompts.competitive_prompt import COMPETITIVE_ANALYST_PROMPT
 
 
 def create_competitive_agent() -> LlmAgent:

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import re
@@ -8,10 +9,10 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types as genai_types
 
-from backend.agents.competitive_agent import create_competitive_agent
-from backend.agents.financial_agent import create_financial_agent
-from backend.agents.sentiment_agent import create_sentiment_agent
-from backend.agents.synthesis_agent import create_synthesis_agent
+from agents.competitive_agent import create_competitive_agent
+from agents.financial_agent import create_financial_agent
+from agents.sentiment_agent import create_sentiment_agent
+from agents.synthesis_agent import create_synthesis_agent
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +65,7 @@ class MAOrchestrator:
         self,
         company_name: str,
         session_id: str,
-        on_status_update: Optional[Callable[[dict[str, Any]], None]] = None,
+        on_status_update: Optional[Callable[[dict[str, Any]], Any]] = None,
     ) -> dict[str, Any]:
         """
         Run the full MA pipeline for a given company.
@@ -74,10 +75,12 @@ class MAOrchestrator:
         Writes the deal memo to Firestore after pipeline completion.
         """
 
-        def _emit(event: dict[str, Any]) -> None:
+        async def _emit(event: dict[str, Any]) -> None:
             if on_status_update:
                 try:
-                    on_status_update(event)
+                    result = on_status_update(event)
+                    if asyncio.iscoroutine(result) or asyncio.isfuture(result):
+                        await result
                 except Exception:
                     logger.exception("on_status_update callback raised an exception")
 
@@ -105,7 +108,7 @@ class MAOrchestrator:
             is_final: bool = getattr(event, "is_final_response", False)
 
             if event_author in _RESEARCH_AGENTS:
-                _emit(
+                await _emit(
                     {
                         "type": "agent_status",
                         "agent": event_author,
@@ -113,20 +116,27 @@ class MAOrchestrator:
                     }
                 )
                 if is_final:
-                    _emit({"type": "agent_complete", "agent": event_author})
+                    await _emit({"type": "agent_complete", "agent": event_author})
 
-            elif event_author == "SynthesisAgent" and is_final:
-                content = getattr(event, "content", None)
-                if content:
-                    for part in getattr(content, "parts", []):
-                        text = getattr(part, "text", None)
-                        if text:
-                            synthesis_text += text
+            elif event_author == "SynthesisAgent":
+                if not is_final:
+                    await _emit(
+                        {
+                            "type": "agent_status",
+                            "agent": "SynthesisAgent",
+                            "is_final": False,
+                        }
+                    )
+                else:
+                    content = getattr(event, "content", None)
+                    if content:
+                        for part in getattr(content, "parts", []):
+                            text = getattr(part, "text", None)
+                            if text:
+                                synthesis_text += text
 
         # Parse the synthesis output into a structured deal memo
         deal_memo = self._parse_synthesis_output(synthesis_text, session_id)
-
-        _emit({"type": "pipeline_complete", "deal_memo": deal_memo})
 
         # Persist to Firestore
         await self._write_to_firestore(session_id, company_name, deal_memo)

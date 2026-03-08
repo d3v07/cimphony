@@ -2,7 +2,7 @@ from string import Template
 
 from google.adk.agents import LlmAgent
 
-from backend.prompts.synthesis_prompt import SYNTHESIS_PROMPT
+from prompts.synthesis_prompt import SYNTHESIS_PROMPT
 
 # Use safe_substitute so ADK session-state placeholders like
 # {financial_data} survive untouched into the runtime instruction.
